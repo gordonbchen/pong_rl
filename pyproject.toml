@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "pong-rl"
+version = "0.1.0"
+description = "Training a reinforcement learning model to play pong (UConn CSE2050)."
+authors = ["gordonbchen <gordonbchen@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.10"
+gymnasium = "^0.29.1"
+numpy = "^2.1.1"
+matplotlib = "^3.9.2"
+notebook = "^7.2.2"
+pygame = "^2.6.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
