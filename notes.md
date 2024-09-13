@@ -61,3 +61,43 @@
   * Take action At, observe reward Rt+1 and new state St+1
   * Update Q(St, At) = Q(St, At) + lr * (Rt+1 + gamma * max(Q(St+1)) - Q(St, At))
 * Off-policy: different policy for acting (epsilon greedy) and updating (max value for state over all possible actions)
+
+## Unit 3: Deep Q-Learning with Atari Games
+* Q-learning is not scalable: FrozenLake = 16 states, Taxi-v3 = 500 states, Atari = (210, 160, 3) * 256 states.
+* Deep Q-learning: state --network--> q-value of actions
+
+* DQN: 4 frames --conv layers--> --fully connected layers--> q-values of (left, right, shoot)
+* Then use epsilon-greedy policy to choose action during training
+
+* Preprocess to reduce state complexity: (210, 160, 3) --downsize--> (84, 84, 4), rgb -> grayscale, crop
+* Stack 4 frames to see things moving, velocity
+
+* Q-learning: new_state_value = former_estimate + learning_rate * (immediate_reward + gamma * max_next_state_reward - former_estimate)
+* Deep q-learning
+  * q-target = immediate_reward + (gamma * max_estimated_next_state_rewawrd)
+  * q-loss = q_target - former_estimation
+
+* Sampling: perform actions, store experiences in replay memory
+* Training: select random batches of experiences and learn using gradient descent
+
+* Initialize replay_memory
+* Epsilon-greedy: random action or argmax(dqn(state))
+* Take action, store transition (state, action, reward, new_state) in replay_memory
+* Sample random minibatch of transitions from D
+* Target = immediate_reward + gamma * max(dqn_fixed(new_state))
+  * target = immediate_reward if terminates and no new_state
+* Perform gradient descent step on dqn, loss = (target - dqn(state)) ** 2
+* Reset dqn_fixed = dqn every C steps
+
+* Experience replay
+  * efficiency: experiences aren't only used 1 time then thrown away
+  * avoid catastrophic forgetting
+
+* Fixed Q-target
+  * if we dont fix it: both q_values and targets are being updated at the same time (same neural net)
+  * moving goalpost, harder to train
+  * use separate network w/ fixed params to get target, then copy params from unfixed dqn every C steps
+
+* Double deep q-learning
+  * DQN: selects best action
+  * Target network (fixed DQN): calculates target q-value of the next state
