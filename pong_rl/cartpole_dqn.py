@@ -32,7 +32,7 @@ class HyperParams:
 
     replay_memory_maxlen = 10_000
 
-    train_episodes = 750
+    train_episodes = 500
     device = "cuda"
 
     output_dir = Path("outputs") / "cartpole_dqn"
@@ -170,6 +170,11 @@ def train(
             # Take action, and store transition.
             next_state, reward, terminated, truncated, info = env.step(action)
             episode_reward += reward
+
+            if terminated:
+                # Set next state to None. This is so that the target value will
+                # be only reward, and not reward + next state value.
+                next_state = None
 
             transition = Transition(state, action, reward, next_state)
             replay_memory.append(transition)
