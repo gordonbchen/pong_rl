@@ -66,7 +66,9 @@ def get_epsilon(
     return min_epsilon + (max_epsilon - min_epsilon) * np.exp(-1.0 * steps * decay)
 
 
-def get_action(policy_net: nn.Module, state: torch.Tensor, epsilon: float) -> int:
+def get_action(
+    policy_net: nn.Module, state: torch.Tensor, env: gym.Env, epsilon: float
+) -> int:
     """Choose a random action using the greedy-epsilon policy."""
     if random.random() < epsilon:
         action = int(env.action_space.sample())
@@ -133,6 +135,7 @@ def train_step(
 def train(
     policy_net: nn.Module,
     target_net: nn.Module,
+    env: gym.Env,
     loss_func: nn.Module,
     optimizer: Optimizer,
 ) -> np.ndarray:
@@ -161,7 +164,7 @@ def train(
                 HyperParams.decay,
                 total_steps,
             )
-            action = get_action(policy_net, state, epsilon)
+            action = get_action(policy_net, state, env, epsilon)
             total_steps += 1
 
             # Take action, and store transition.
@@ -201,7 +204,7 @@ def get_frames(policy_net: nn.Module, env: gym.Env) -> list[np.ndarray]:
     frames = []
 
     while True:
-        action = get_action(policy_net, state, epsilon=0.0)
+        action = get_action(policy_net, state, env, epsilon=0.0)
         next_state, reward, terminated, truncated, info = env.step(action)
         state = next_state
 
@@ -250,7 +253,7 @@ if __name__ == "__main__":
     loss_func = nn.HuberLoss()
 
     # Train.
-    rewards = train(policy_net, target_net, loss_func, optimizer)
+    rewards = train(policy_net, target_net, env, loss_func, optimizer)
     plot_rewards(rewards)
 
     # Show an episode.
