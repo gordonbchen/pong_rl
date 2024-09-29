@@ -22,6 +22,7 @@ from line_profiler import profile
 class HyperParams:
     batch_size = 128
     lr = 1e-4
+    gradient_clip_value = 2.5
 
     gamma = 0.99
     target_net_lr = 5e-3
@@ -117,7 +118,9 @@ def train_step(
     loss.backward()
 
     # Clip gradient.
-    torch.nn.utils.clip_grad_value_(policy_net.parameters(), 100.0)
+    torch.nn.utils.clip_grad_norm_(
+        policy_net.parameters(), HyperParams.gradient_clip_value
+    )
     optimizer.step()
 
     # Soft update target net.
