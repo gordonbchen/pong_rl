@@ -20,26 +20,26 @@ from torch.optim.optimizer import Optimizer
 
 @dataclass
 class HyperParams:
-    output_subdir: str
-
     train_episodes: int = 500
     batch_size: int = 128
-
-    gamma: float = 0.99
-    gradient_clip_value: float = 100.0
-
-    replay_memory_maxlen: int = 10_000
-
-    device: str = "cuda"
 
     # Learning rates.
     lr: float = 1e-4
     target_net_lr: float = 5e-3
 
-    # Epsilon.
+    # Reward discount rate.
+    gamma: float = 0.99
+
+    # Epsilon-greedy scheduler.
     max_epsilon: float = 0.9
     min_epsilon: float = 0.05
-    decay: float = 1e-3
+    epsilon_decay: float = 1e-3
+
+    replay_memory_maxlen: int = 10_000
+    gradient_clip_value: float = 100.0
+
+    output_subdir: str = ""
+    device: str = "cuda"
 
     def __post_init__(self) -> None:
         self.output_dir = Path("outputs") / self.output_subdir
@@ -47,10 +47,12 @@ class HyperParams:
 
 
 def get_epsilon(
-    min_epsilon: float, max_epsilon: float, decay: float, steps: int
+    min_epsilon: float, max_epsilon: float, epsilon_decay: float, steps: int
 ) -> float:
     """Get the epsilon value based on the number of steps taken."""
-    return min_epsilon + (max_epsilon - min_epsilon) * np.exp(-1.0 * steps * decay)
+    return min_epsilon + (max_epsilon - min_epsilon) * np.exp(
+        -1.0 * steps * epsilon_decay
+    )
 
 
 def get_action(
@@ -154,7 +156,7 @@ def train(
             epsilon = get_epsilon(
                 hyper_params.min_epsilon,
                 hyper_params.max_epsilon,
-                hyper_params.decay,
+                hyper_params.epsilon_decay,
                 total_steps,
             )
             action = get_action(policy_net, state, env, epsilon, hyper_params.device)
