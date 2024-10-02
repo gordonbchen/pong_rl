@@ -47,10 +47,6 @@ class ConvDQN(nn.Module):
         self.top_border_end = top_border_end
         self.bottom_border_end = bottom_border_end
 
-        self.register_buffer(
-            "luminance", torch.tensor([0.2989, 0.5870, 0.1140], dtype=torch.float32)
-        )
-
         self.conv1 = nn.Sequential(
             nn.Conv2d(1, 32, kernel_size=3, stride=1, padding="same", bias=False),
             nn.BatchNorm2d(32),
@@ -77,7 +73,6 @@ class ConvDQN(nn.Module):
         """Forward the model."""
         # Preprocess.
         z = xb[:, self.top_border_end : self.bottom_border_end + 1] / 255.0
-        z = z @ self.luminance
         z = resize(z.unsqueeze(1), (32, 32))
 
         z = self.conv1(z)
@@ -89,7 +84,11 @@ class ConvDQN(nn.Module):
 if __name__ == "__main__":
     # Create env.
     env = gym.make(
-        "ALE/Pong-v5", mode=0, difficulty=0, obs_type="rgb", render_mode="rgb_array"
+        "ALE/Pong-v5",
+        mode=0,
+        difficulty=0,
+        obs_type="grayscale",
+        render_mode="rgb_array",
     )
     state, info = env.reset()
 
