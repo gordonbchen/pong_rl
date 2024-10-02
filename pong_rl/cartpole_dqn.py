@@ -6,8 +6,8 @@ import gymnasium as gym
 from train_funcs import HyperParams, plot_rewards, show_episode, train
 
 
-class DQN(nn.Module):
-    """Deep Q Network."""
+class MLPDQN(nn.Module):
+    """MLP Deep Q Network."""
 
     def __init__(self, n_observations: int, n_actions: int) -> None:
         """Initialize the network."""
@@ -35,8 +35,8 @@ if __name__ == "__main__":
     n_observations = len(state)
     n_actions = env.action_space.n
 
-    policy_net = DQN(n_observations, n_actions)
-    target_net = DQN(n_observations, n_actions)
+    policy_net = MLPDQN(n_observations, n_actions)
+    target_net = MLPDQN(n_observations, n_actions)
     target_net.load_state_dict(policy_net.state_dict())
 
     # Optimizer and loss func.
