@@ -102,8 +102,9 @@ if __name__ == "__main__":
 
     # Optimizer and loss func.
     hyper_params = HyperParams(
-        train_episodes=500,
+        train_episodes=1_000,
         batch_size=128,
+        use_state_diff=True,
         lr=1e-4,
         target_net_lr=5e-3,
         gamma=0.99,
@@ -112,7 +113,7 @@ if __name__ == "__main__":
         epsilon_decay=1e-3,
         replay_memory_maxlen=10_000,
         gradient_clip_value=100.0,
-        output_subdir="pong_dqn",
+        output_subdir="pong_dqn_state_diff",  # TODO: Make this a CLI arg.
         device="cuda",
     )
 
@@ -122,7 +123,6 @@ if __name__ == "__main__":
     loss_func = nn.HuberLoss()
 
     # Train.
-    # TODO: feed diff b/t frames.
     rewards = train(policy_net, target_net, env, loss_func, optimizer, hyper_params)
     plot_rewards(rewards, hyper_params.output_dir)
 

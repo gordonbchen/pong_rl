@@ -23,6 +23,10 @@ class HyperParams:
     train_episodes: int = 500
     batch_size: int = 128
 
+    # Feed state - prev_state instead of state.
+    # State diff shows velocity when states are frames..
+    use_state_diff: bool = False
+
     # Learning rates.
     lr: float = 1e-4
     target_net_lr: float = 5e-3
@@ -150,6 +154,7 @@ def train(
     for episode in range(hyper_params.train_episodes):
         episode_reward = 0
         state, info = env.reset()
+        prev_state = np.zeros_like(state)
 
         for step in count():
             # Sample action.
@@ -159,7 +164,17 @@ def train(
                 hyper_params.epsilon_decay,
                 total_steps,
             )
-            action = get_action(policy_net, state, env, epsilon, hyper_params.device)
+
+            if hyper_params.use_state_diff:
+                curr_prev_state_diff = state - prev_state
+
+            action = get_action(
+                policy_net,
+                curr_prev_state_diff if hyper_params.use_state_diff else state,
+                env,
+                epsilon,
+                hyper_params.device,
+            )
             total_steps += 1
 
             # Take action, and store transition.
@@ -170,9 +185,19 @@ def train(
                 # Set next state to None. This is so that the target value will
                 # be only reward, and not reward + next state value.
                 next_state = None
+                next_curr_state_diff = None
+            elif hyper_params.use_state_diff:
+                next_curr_state_diff = next_state - state
 
-            transition = Transition(state, action, reward, next_state)
+            transition = Transition(
+                curr_prev_state_diff if hyper_params.use_state_diff else state,
+                action,
+                reward,
+                next_curr_state_diff if hyper_params.use_state_diff else next_state,
+            )
             replay_memory.append(transition)
+
+            prev_state = state
             state = next_state
 
             # Perform a training step.
@@ -205,14 +230,27 @@ def plot_rewards(rewards: np.ndarray, output_dir: Path) -> None:
     plt.savefig(output_dir / "rewards.png")
 
 
-def get_frames(policy_net: nn.Module, env: gym.Env, device: str) -> list[np.ndarray]:
+def get_frames(
+    policy_net: nn.Module, env: gym.Env, hyper_params: HyperParams
+) -> list[np.ndarray]:
     """Play a single episode and return frames."""
     state, info = env.reset()
+    prev_state = np.zeros_like(state)
     frames = []
 
     while True:
-        action = get_action(policy_net, state, env, epsilon=0.0, device=device)
+        if hyper_params.use_state_diff:
+            curr_prev_state_diff = state - prev_state
+
+        action = get_action(
+            policy_net,
+            curr_prev_state_diff if hyper_params.use_state_diff else state,
+            env,
+            epsilon=0.0,
+            device=hyper_params.device,
+        )
         next_state, reward, terminated, truncated, info = env.step(action)
+        prev_state = state
         state = next_state
 
         frames.append(env.render())
@@ -228,7 +266,7 @@ def show_episode(
     """Show an episode of gameplay."""
     policy_net.eval()
 
-    frames = get_frames(policy_net, env, hyper_params.device)
+    frames = get_frames(policy_net, env, hyper_params)
 
     fig, ax = plt.subplots()
     img = ax.imshow(frames[0])

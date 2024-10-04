@@ -43,6 +43,7 @@ if __name__ == "__main__":
     hyper_params = HyperParams(
         train_episodes=500,
         batch_size=128,
+        use_state_diff=False,
         lr=1e-4,
         target_net_lr=5e-3,
         gamma=0.99,
