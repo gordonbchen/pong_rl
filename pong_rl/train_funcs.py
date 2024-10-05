@@ -16,6 +16,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.optim.optimizer import Optimizer
+from torch.utils.tensorboard import SummaryWriter
 
 
 @dataclass
@@ -137,20 +138,20 @@ def train(
     loss_func: nn.Module,
     optimizer: Optimizer,
     hyper_params: HyperParams,
-) -> np.ndarray:
+) -> None:
     """Train the dqn."""
+    writer = SummaryWriter(log_dir=hyper_params.output_dir, max_queue=5)
+
     # Move models to device.
     policy_net.to(hyper_params.device).train()
     target_net.to(hyper_params.device).train()
 
     # Create replay memory and transition type.
+    # TODO: Prioritized experience replay.
     replay_memory = deque([], hyper_params.replay_memory_maxlen)
     Transition = namedtuple("Transition", ["state", "action", "reward", "next_state"])
 
-    # Track episode rewards.
-    rewards = np.empty(hyper_params.train_episodes, dtype=np.float32)
     total_steps = 0
-
     for episode in range(hyper_params.train_episodes):
         episode_reward = 0
         state, info = env.reset()
@@ -214,20 +215,12 @@ def train(
             if terminated or truncated:
                 break
 
-        # Display episode and reward.
-        rewards[episode] = episode_reward
-        print(f"episode {episode}\treward {episode_reward:.5f}")
+        # Log metrics.
+        writer.add_scalar("episode_reward", episode_reward, episode)
+        writer.add_scalar("epsilon", epsilon, episode)
+        writer.add_scalar("total_steps", total_steps, episode)
 
-    return rewards
-
-
-def plot_rewards(rewards: np.ndarray, output_dir: Path) -> None:
-    """Plot training rewards over training episodes."""
-    plt.plot(rewards)
-    plt.xlabel("episode")
-    plt.ylabel("reward")
-
-    plt.savefig(output_dir / "rewards.png")
+    writer.close()
 
 
 def get_frames(

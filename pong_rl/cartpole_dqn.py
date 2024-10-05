@@ -3,7 +3,7 @@ import torch.nn as nn
 
 import gymnasium as gym
 
-from train_funcs import HyperParams, plot_rewards, show_episode, train
+from train_funcs import HyperParams, show_episode, train
 
 
 class MLPDQN(nn.Module):
@@ -61,9 +61,6 @@ if __name__ == "__main__":
     )
     loss_func = nn.HuberLoss()
 
-    # Train.
-    rewards = train(policy_net, target_net, env, loss_func, optimizer, hyper_params)
-    plot_rewards(rewards, hyper_params.output_dir)
-
-    # Show an episode.
+    # Train and show an episode.
+    train(policy_net, target_net, env, loss_func, optimizer, hyper_params)
     show_episode(policy_net, env, hyper_params)
