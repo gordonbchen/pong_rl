@@ -219,6 +219,7 @@ def train(
         writer.add_scalar("episode_reward", episode_reward, episode)
         writer.add_scalar("epsilon", epsilon, episode)
         writer.add_scalar("total_steps", total_steps, episode)
+        print(f"episode {episode}\treward {episode_reward}")
 
     writer.close()
 
