@@ -50,12 +50,12 @@ class HyperParams:
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
 
-def get_epsilon(
-    min_epsilon: float, max_epsilon: float, epsilon_decay: float, steps: int
-) -> float:
+def get_epsilon(hyper_params: HyperParams, steps: int) -> float:
     """Get the epsilon value based on the number of steps taken."""
-    return min_epsilon + (max_epsilon - min_epsilon) * np.exp(
-        -1.0 * steps * epsilon_decay
+    decay = np.exp(-1.0 * steps * hyper_params.epsilon_decay)
+    return (
+        hyper_params.min_epsilon
+        + (hyper_params.max_epsilon - hyper_params.min_epsilon) * decay
     )
 
 
@@ -155,12 +155,7 @@ def train(
 
         for step in count():
             # Sample action.
-            epsilon = get_epsilon(
-                hyper_params.min_epsilon,
-                hyper_params.max_epsilon,
-                hyper_params.epsilon_decay,
-                total_steps,
-            )
+            epsilon = get_epsilon(hyper_params, total_steps)
 
             if hyper_params.use_state_diff:
                 curr_prev_state_diff = state - prev_state
