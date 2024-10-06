@@ -13,11 +13,11 @@ class MLPDQN(nn.Module):
         """Initialize the network."""
         super().__init__()
         self.linear = nn.Sequential(
-            nn.Linear(n_observations, 128),
+            nn.Linear(n_observations, 256),
             nn.ReLU(),
-            nn.Linear(128, 128),
+            nn.Linear(256, 256),
             nn.ReLU(),
-            nn.Linear(128, n_actions),
+            nn.Linear(256, n_actions),
         )
 
     def forward(self, xb: torch.Tensor) -> torch.Tensor:
