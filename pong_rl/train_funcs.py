@@ -25,7 +25,7 @@ class HyperParams:
     batch_size: int = 128
 
     # Feed state - prev_state instead of state.
-    # State diff shows velocity when states are frames..
+    # State diff shows velocity when states are frames.
     use_state_diff: bool = False
 
     # Learning rates.
