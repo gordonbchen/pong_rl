@@ -115,7 +115,6 @@ if __name__ == "__main__":
         min_epsilon=0.05,
         epsilon_decay=1e-5,
         replay_memory_maxlen=50_000,
-        gradient_clip_value=100.0,
         output_subdir="pong_dqn_state_diff",  # TODO: Make this a CLI arg.
         device="cuda",
     )

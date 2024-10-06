@@ -41,7 +41,6 @@ class HyperParams:
     epsilon_decay: float = 1e-3
 
     replay_memory_maxlen: int = 10_000
-    gradient_clip_value: float = 100.0
 
     output_subdir: str = ""
     device: str = "cuda"
@@ -114,9 +113,6 @@ def train_step(
 
     loss = loss_func(pred_values, target_values)
     loss.backward()
-
-    # Clip gradient.
-    torch.nn.utils.clip_grad_value_(policy_net.parameters(), 100.0)
     optimizer.step()
 
     # Soft update target net.
