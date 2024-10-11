@@ -1,7 +1,8 @@
 import random
+import json
 
 from collections import deque, namedtuple
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from itertools import count
 from pathlib import Path
 
@@ -48,6 +49,10 @@ class HyperParams:
     def __post_init__(self) -> None:
         self.output_dir = Path("outputs") / self.output_subdir
         self.output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Save as json.
+        with open(self.output_dir / "hyper_params.json", mode="w") as f:
+            json.dump(asdict(self), f, indent=4)
 
 
 def get_epsilon(hyper_params: HyperParams, steps: int) -> float:
