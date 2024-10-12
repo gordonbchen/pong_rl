@@ -126,18 +126,12 @@ if __name__ == "__main__":
         device="cuda",
     )
 
-    policy_net = ConvDQN(
-        hyper_params.n_state_history, n_actions, top_border_end, bottom_border_end
-    )
-    target_net = ConvDQN(
-        hyper_params.n_state_history, n_actions, top_border_end, bottom_border_end
-    )
+    policy_net = ConvDQN(hyper_params.n_state_history, n_actions, top_border_end, bottom_border_end)
+    target_net = ConvDQN(hyper_params.n_state_history, n_actions, top_border_end, bottom_border_end)
     target_net.load_state_dict(policy_net.state_dict())
 
     # Optimizer and loss func.
-    optimizer = torch.optim.AdamW(
-        policy_net.parameters(), lr=hyper_params.lr, amsgrad=True
-    )
+    optimizer = torch.optim.AdamW(policy_net.parameters(), lr=hyper_params.lr, amsgrad=True)
     loss_func = nn.HuberLoss()
 
     # Train and show an episode.

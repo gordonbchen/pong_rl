@@ -58,10 +58,7 @@ class HyperParams:
 def get_epsilon(hyper_params: HyperParams, steps: int) -> float:
     """Get the epsilon value based on the number of steps taken."""
     decay = np.exp(-1.0 * steps * hyper_params.epsilon_decay)
-    return (
-        hyper_params.min_epsilon
-        + (hyper_params.max_epsilon - hyper_params.min_epsilon) * decay
-    )
+    return hyper_params.min_epsilon + (hyper_params.max_epsilon - hyper_params.min_epsilon) * decay
 
 
 def get_action(
@@ -97,9 +94,7 @@ def train_step(
     states, actions, rewards, next_states = zip(*transitions)
     actions = torch.tensor(actions, dtype=torch.int64, device=hyper_params.device)
     rewards = torch.tensor(rewards, dtype=torch.float32, device=hyper_params.device)
-    states = torch.tensor(
-        np.stack(states), dtype=torch.float32, device=hyper_params.device
-    )
+    states = torch.tensor(np.stack(states), dtype=torch.float32, device=hyper_params.device)
 
     # Calculate target values.
     target_values = rewards.clone()
@@ -159,8 +154,7 @@ def train(
         obs, info = env.reset()
 
         state_history = deque(
-            [np.zeros_like(obs) for i in range(hyper_params.n_state_history - 1)]
-            + [obs],
+            [np.zeros_like(obs) for i in range(hyper_params.n_state_history - 1)] + [obs],
             maxlen=hyper_params.n_state_history,
         )
 
@@ -190,12 +184,7 @@ def train(
             # Perform a training step.
             if len(replay_memory) >= hyper_params.batch_size:
                 train_step(
-                    policy_net,
-                    target_net,
-                    loss_func,
-                    optimizer,
-                    replay_memory,
-                    hyper_params,
+                    policy_net, target_net, loss_func, optimizer, replay_memory, hyper_params
                 )
 
             if terminated or truncated:
@@ -210,9 +199,7 @@ def train(
     writer.close()
 
 
-def get_frames(
-    policy_net: nn.Module, env: gym.Env, hyper_params: HyperParams
-) -> list[np.ndarray]:
+def get_frames(policy_net: nn.Module, env: gym.Env, hyper_params: HyperParams) -> list[np.ndarray]:
     """Play a single episode and return frames."""
     obs, info = env.reset()
     state_history = deque(
@@ -221,14 +208,9 @@ def get_frames(
     )
 
     frames = []
-
     while True:
         action = get_action(
-            policy_net,
-            np.stack(state_history),
-            env,
-            epsilon=0.0,
-            device=hyper_params.device,
+            policy_net, np.stack(state_history), env, epsilon=0.0, device=hyper_params.device
         )
         next_obs, reward, terminated, truncated, info = env.step(action)
         state_history.append(next_obs)
@@ -240,9 +222,7 @@ def get_frames(
     return frames
 
 
-def show_episode(
-    policy_net: nn.Module, env: gym.Env, hyper_params: HyperParams
-) -> None:
+def show_episode(policy_net: nn.Module, env: gym.Env, hyper_params: HyperParams) -> None:
     """Show an episode of gameplay."""
     policy_net.eval()
 

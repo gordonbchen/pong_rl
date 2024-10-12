@@ -58,9 +58,7 @@ if __name__ == "__main__":
         device="cuda",
     )
 
-    optimizer = torch.optim.AdamW(
-        policy_net.parameters(), lr=hyper_params.lr, amsgrad=True
-    )
+    optimizer = torch.optim.AdamW(policy_net.parameters(), lr=hyper_params.lr, amsgrad=True)
     loss_func = nn.HuberLoss()
 
     # Train and show an episode.
