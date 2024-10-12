@@ -25,9 +25,9 @@ class HyperParams:
     train_episodes: int = 500
     batch_size: int = 128
 
-    # Feed state - prev_state instead of state.
-    # State diff shows velocity when states are frames.
-    use_state_diff: bool = False
+    # Number of prev states to use as input (including current state).
+    # Useful for determining features like velocity.
+    n_state_history: int = 1
 
     # Learning rates.
     lr: float = 1e-4
@@ -76,8 +76,9 @@ def get_action(
         action = int(env.action_space.sample())
     else:
         with torch.no_grad():
-            state = torch.tensor(state, dtype=torch.float32, device=device)
-            action = policy_net(state.unsqueeze(0)).argmax().item()
+            # Unsqueeze to create batch dim.
+            state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+            action = policy_net(state).argmax().item()
 
     return action
 
@@ -113,10 +114,10 @@ def train_step(
     target_values[non_terminated_mask] += hyper_params.gamma * next_state_values
 
     # Calculate preds of taken actions (no loss on other actions b/c no reward).
-    optimizer.zero_grad()
     pred_values = policy_net(states).gather(1, actions.unsqueeze(1)).squeeze()
-
     loss = loss_func(pred_values, target_values)
+
+    optimizer.zero_grad(set_to_none=True)
     loss.backward()
     optimizer.step()
 
@@ -155,47 +156,36 @@ def train(
     total_steps = 0
     for episode in range(hyper_params.train_episodes):
         episode_reward = 0
-        state, info = env.reset()
-        prev_state = np.zeros_like(state)
+        obs, info = env.reset()
+
+        state_history = deque(
+            [np.zeros_like(obs) for i in range(hyper_params.n_state_history - 1)]
+            + [obs],
+            maxlen=hyper_params.n_state_history,
+        )
 
         for step in count():
             # Sample action.
             epsilon = get_epsilon(hyper_params, total_steps)
 
-            if hyper_params.use_state_diff:
-                curr_prev_state_diff = state - prev_state
-
-            action = get_action(
-                policy_net,
-                curr_prev_state_diff if hyper_params.use_state_diff else state,
-                env,
-                epsilon,
-                hyper_params.device,
-            )
+            state = np.stack(state_history)
+            action = get_action(policy_net, state, env, epsilon, hyper_params.device)
             total_steps += 1
 
             # Take action, and store transition.
-            next_state, reward, terminated, truncated, info = env.step(action)
+            next_obs, reward, terminated, truncated, info = env.step(action)
             episode_reward += reward
 
             if terminated:
                 # Set next state to None. This is so that the target value will
                 # be only reward, and not reward + next state value.
                 next_state = None
-                next_curr_state_diff = None
-            elif hyper_params.use_state_diff:
-                next_curr_state_diff = next_state - state
+            else:
+                state_history.append(next_obs)
+                next_state = np.stack(state_history)
 
-            transition = Transition(
-                curr_prev_state_diff if hyper_params.use_state_diff else state,
-                action,
-                reward,
-                next_curr_state_diff if hyper_params.use_state_diff else next_state,
-            )
+            transition = Transition(state, action, reward, next_state)
             replay_memory.append(transition)
-
-            prev_state = state
-            state = next_state
 
             # Perform a training step.
             if len(replay_memory) >= hyper_params.batch_size:
@@ -224,24 +214,24 @@ def get_frames(
     policy_net: nn.Module, env: gym.Env, hyper_params: HyperParams
 ) -> list[np.ndarray]:
     """Play a single episode and return frames."""
-    state, info = env.reset()
-    prev_state = np.zeros_like(state)
+    obs, info = env.reset()
+    state_history = deque(
+        [np.zeros_like(obs) for i in range(hyper_params.n_state_history - 1)] + [obs],
+        maxlen=hyper_params.n_state_history,
+    )
+
     frames = []
 
     while True:
-        if hyper_params.use_state_diff:
-            curr_prev_state_diff = state - prev_state
-
         action = get_action(
             policy_net,
-            curr_prev_state_diff if hyper_params.use_state_diff else state,
+            np.stack(state_history),
             env,
             epsilon=0.0,
             device=hyper_params.device,
         )
-        next_state, reward, terminated, truncated, info = env.step(action)
-        prev_state = state
-        state = next_state
+        next_obs, reward, terminated, truncated, info = env.step(action)
+        state_history.append(next_obs)
 
         frames.append(env.render())
         if terminated or truncated:

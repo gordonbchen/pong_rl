@@ -40,7 +40,11 @@ class ConvDQN(nn.Module):
     """Convolutional Deep Q Network."""
 
     def __init__(
-        self, n_actions: int, top_border_end: int, bottom_border_end: int
+        self,
+        n_input_channels: int,
+        n_actions: int,
+        top_border_end: int,
+        bottom_border_end: int,
     ) -> None:
         """Initialize the network."""
         super().__init__()
@@ -48,7 +52,14 @@ class ConvDQN(nn.Module):
         self.bottom_border_end = bottom_border_end
 
         self.conv1 = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=3, stride=1, padding="same", bias=False),
+            nn.Conv2d(
+                n_input_channels,
+                32,
+                kernel_size=3,
+                stride=1,
+                padding="same",
+                bias=False,
+            ),
             nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.Conv2d(32, 32, kernel_size=3, stride=1, padding="same", bias=False),
@@ -76,8 +87,8 @@ class ConvDQN(nn.Module):
     def forward(self, xb: torch.Tensor) -> torch.Tensor:
         """Forward the model."""
         # Preprocess.
-        z = xb[:, self.top_border_end : self.bottom_border_end + 1] / 255.0
-        z = resize(z.unsqueeze(1), (32, 32))
+        z = xb[:, :, self.top_border_end : self.bottom_border_end + 1] / 255.0
+        z = resize(z, (32, 32))
 
         z = self.conv1(z)
         z = self.conv2(z)
@@ -94,20 +105,16 @@ if __name__ == "__main__":
         obs_type="grayscale",
         render_mode="rgb_array",
     )
-    state, info = env.reset()
+    obs, info = env.reset()
 
     # Create policy and target nets. Copy policy weights to target net.
     n_actions = env.action_space.n
-    top_border_end, bottom_border_end = find_border_ends(state)
-
-    policy_net = ConvDQN(n_actions, top_border_end, bottom_border_end)
-    target_net = ConvDQN(n_actions, top_border_end, bottom_border_end)
-    target_net.load_state_dict(policy_net.state_dict())
+    top_border_end, bottom_border_end = find_border_ends(obs)
 
     hyper_params = HyperParams(
         train_episodes=500,
         batch_size=128,
-        use_state_diff=True,
+        n_state_history=4,
         lr=1e-4,
         target_net_lr=5e-3,
         gamma=0.99,
@@ -115,9 +122,17 @@ if __name__ == "__main__":
         min_epsilon=0.05,
         epsilon_decay=1e-5,
         replay_memory_maxlen=50_000,
-        output_subdir="pong_dqn_state_diff",  # TODO: Make this a CLI arg.
+        output_subdir="pong_dqn/state_history",  # TODO: Make this a CLI arg.
         device="cuda",
     )
+
+    policy_net = ConvDQN(
+        hyper_params.n_state_history, n_actions, top_border_end, bottom_border_end
+    )
+    target_net = ConvDQN(
+        hyper_params.n_state_history, n_actions, top_border_end, bottom_border_end
+    )
+    target_net.load_state_dict(policy_net.state_dict())
 
     # Optimizer and loss func.
     optimizer = torch.optim.AdamW(
@@ -128,3 +143,13 @@ if __name__ == "__main__":
     # Train and show an episode.
     train(policy_net, target_net, env, loss_func, optimizer, hyper_params)
     show_episode(policy_net, env, hyper_params)
+
+    # Save model.
+    torch.save(
+        {
+            "policy_net_state_dict": policy_net.state_dict(),
+            "target_net_state_dict": target_net.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+        },
+        hyper_params.output_dir / "saved_models.tar",
+    )

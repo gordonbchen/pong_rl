@@ -22,17 +22,20 @@ class MLPDQN(nn.Module):
 
     def forward(self, xb: torch.Tensor) -> torch.Tensor:
         """Forward the model."""
-        z = self.linear(xb)
+        # Squeeze to support passing history.
+        # Stacking during state creation and unsqueezing
+        # during action forward gives duplicate batch dim.
+        z = self.linear(xb.squeeze(1))
         return z
 
 
 if __name__ == "__main__":
     # Create env.
     env = gym.make("CartPole-v1", render_mode="rgb_array")
-    state, info = env.reset()
+    obs, info = env.reset()
 
     # Create policy and target nets. Copy policy weights to target net.
-    n_observations = len(state)
+    n_observations = len(obs)
     n_actions = env.action_space.n
 
     policy_net = MLPDQN(n_observations, n_actions)
@@ -43,7 +46,7 @@ if __name__ == "__main__":
     hyper_params = HyperParams(
         train_episodes=500,
         batch_size=128,
-        use_state_diff=False,
+        n_state_history=1,
         lr=1e-4,
         target_net_lr=5e-3,
         gamma=0.99,
@@ -51,7 +54,7 @@ if __name__ == "__main__":
         min_epsilon=0.05,
         epsilon_decay=1e-3,
         replay_memory_maxlen=10_000,
-        output_subdir="cartpole_dqn/base",
+        output_subdir="cartpole_dqn/state_history_refactor",
         device="cuda",
     )
 
