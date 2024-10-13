@@ -20,13 +20,16 @@ class MLPDQN(nn.Module):
             nn.Linear(256, n_actions),
         )
 
-    def forward(self, xb: torch.Tensor) -> torch.Tensor:
-        """Forward the model."""
+    def preprocess(self, xb: torch.Tensor) -> torch.Tensor:
+        """Preprocess the inputs."""
         # Squeeze to support passing history.
         # Stacking during state creation and unsqueezing
         # during action forward gives duplicate batch dim.
-        z = self.linear(xb.squeeze(1))
-        return z
+        return xb.squeeze(1)
+
+    def forward(self, xb: torch.Tensor) -> torch.Tensor:
+        """Forward the model. Inputs should already be preprocessed."""
+        return self.linear(xb)
 
 
 if __name__ == "__main__":
@@ -54,7 +57,7 @@ if __name__ == "__main__":
         min_epsilon=0.05,
         epsilon_decay=1e-3,
         replay_memory_maxlen=10_000,
-        output_subdir="cartpole_dqn/state_history_refactor",
+        output_subdir="cartpole_dqn/speed",
         device="cuda",
     )
 

@@ -61,20 +61,12 @@ def get_epsilon(hyper_params: HyperParams, steps: int) -> float:
     return hyper_params.min_epsilon + (hyper_params.max_epsilon - hyper_params.min_epsilon) * decay
 
 
-def get_action(
-    policy_net: nn.Module,
-    state: torch.Tensor,
-    env: gym.Env,
-    epsilon: float,
-    device: str,
-) -> int:
+def get_action(policy_net: nn.Module, state: torch.Tensor, env: gym.Env, epsilon: float) -> int:
     """Choose a random action using the greedy-epsilon policy."""
     if random.random() < epsilon:
         action = int(env.action_space.sample())
     else:
         with torch.no_grad():
-            # Unsqueeze to create batch dim.
-            state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
             action = policy_net(state).argmax().item()
 
     return action
@@ -94,16 +86,12 @@ def train_step(
     states, actions, rewards, next_states = zip(*transitions)
     actions = torch.tensor(actions, dtype=torch.int64, device=hyper_params.device)
     rewards = torch.tensor(rewards, dtype=torch.float32, device=hyper_params.device)
-    states = torch.tensor(np.stack(states), dtype=torch.float32, device=hyper_params.device)
+    states = torch.concat(states)
 
     # Calculate target values.
     target_values = rewards.clone()
     non_terminated_mask = [next_state is not None for next_state in next_states]
-    non_terminated_next_states = torch.tensor(
-        np.stack([i for i in next_states if i is not None]),
-        dtype=torch.float32,
-        device=hyper_params.device,
-    )
+    non_terminated_next_states = torch.concat([i for i in next_states if i is not None])
     with torch.no_grad():
         next_state_values = target_net(non_terminated_next_states).max(axis=1).values
     target_values[non_terminated_mask] += hyper_params.gamma * next_state_values
@@ -125,6 +113,13 @@ def train_step(
                 policy_net_param.data - target_net_param.data
             )
             target_net_param.data.copy_(updated_param)
+
+
+def stack_batch_preprocess(
+    state_history: deque[torch.Tensor], policy_net: nn.Module
+) -> torch.Tensor:
+    """Stack, batch, and preprocess the state history into a single batched input."""
+    return policy_net.preprocess(torch.stack(list(state_history)).unsqueeze(0))
 
 
 @profile
@@ -153,17 +148,17 @@ def train(
         episode_reward = 0
         obs, info = env.reset()
 
+        obs = torch.tensor(obs, dtype=torch.float32, device=hyper_params.device)
         state_history = deque(
-            [np.zeros_like(obs) for i in range(hyper_params.n_state_history - 1)] + [obs],
+            [torch.zeros_like(obs) for i in range(hyper_params.n_state_history - 1)] + [obs],
             maxlen=hyper_params.n_state_history,
         )
+        state = stack_batch_preprocess(state_history, policy_net)
 
         for step in count():
             # Sample action.
             epsilon = get_epsilon(hyper_params, total_steps)
-
-            state = np.stack(state_history)
-            action = get_action(policy_net, state, env, epsilon, hyper_params.device)
+            action = get_action(policy_net, state, env, epsilon)
             total_steps += 1
 
             # Take action, and store transition.
@@ -175,11 +170,14 @@ def train(
                 # be only reward, and not reward + next state value.
                 next_state = None
             else:
+                next_obs = torch.tensor(next_obs, dtype=torch.float32, device=hyper_params.device)
                 state_history.append(next_obs)
-                next_state = np.stack(state_history)
+                next_state = stack_batch_preprocess(state_history, policy_net)
 
             transition = Transition(state, action, reward, next_state)
             replay_memory.append(transition)
+
+            state = next_state
 
             # Perform a training step.
             if len(replay_memory) >= hyper_params.batch_size:
@@ -202,17 +200,20 @@ def train(
 def get_frames(policy_net: nn.Module, env: gym.Env, hyper_params: HyperParams) -> list[np.ndarray]:
     """Play a single episode and return frames."""
     obs, info = env.reset()
+
+    obs = torch.tensor(obs, dtype=torch.float32, device=hyper_params.device)
     state_history = deque(
-        [np.zeros_like(obs) for i in range(hyper_params.n_state_history - 1)] + [obs],
+        [torch.zeros_like(obs) for i in range(hyper_params.n_state_history - 1)] + [obs],
         maxlen=hyper_params.n_state_history,
     )
 
     frames = []
     while True:
-        action = get_action(
-            policy_net, np.stack(state_history), env, epsilon=0.0, device=hyper_params.device
-        )
+        state = stack_batch_preprocess(state_history, policy_net)
+        action = get_action(policy_net, state, env, epsilon=0.0)
+
         next_obs, reward, terminated, truncated, info = env.step(action)
+        next_obs = torch.tensor(next_obs, dtype=torch.float32, device=hyper_params.device)
         state_history.append(next_obs)
 
         frames.append(env.render())

@@ -84,16 +84,16 @@ class ConvDQN(nn.Module):
             nn.Linear(128, n_actions),
         )
 
-    def forward(self, xb: torch.Tensor) -> torch.Tensor:
-        """Forward the model."""
-        # Preprocess.
+    def preprocess(self, xb: torch.Tensor) -> torch.Tensor:
+        """Preprocess the inputs. Crop, grayscale, and size down."""
         z = xb[:, :, self.top_border_end : self.bottom_border_end + 1] / 255.0
-        z = resize(z, (32, 32))
+        return resize(z, (32, 32))
 
-        z = self.conv1(z)
+    def forward(self, xb: torch.Tensor) -> torch.Tensor:
+        """Forward the model. Inputs should have already been preprocessed."""
+        z = self.conv1(xb)
         z = self.conv2(z)
-        z = self.linear(z)
-        return z
+        return self.linear(z)
 
 
 if __name__ == "__main__":
@@ -122,7 +122,7 @@ if __name__ == "__main__":
         min_epsilon=0.05,
         epsilon_decay=1e-5,
         replay_memory_maxlen=50_000,
-        output_subdir="pong_dqn/state_history",  # TODO: Make this a CLI arg.
+        output_subdir="pong_dqn/speed",  # TODO: Make this a CLI arg.
         device="cuda",
     )
 
