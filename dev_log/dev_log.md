@@ -1,3 +1,19 @@
+### 10/13/2024
+* Used kernprof to profile training (5 episodes).
+    * Before state_history: 65.27s
+    * State history = 1: 51.21s
+    * State history = 2: 111.00s
+    * State history = 4: 164.00s
+* Biggest slowdowns: state and next_state stacking
+* Fixed slowdowns by storing states and next states already moved to cuda
+    * New faster training time (4): 24.79s
+* Problem: store 50_000 examples, 160x210x4 states, x2 for next state as well, and 4 bytes per float32 = 53.76GB. So going to set off a training run before I go to bed. But I expect an OOM error. If I don't get one then something is wrong. YUP. Got OOM error.
+* Possible solutions:
+    * Store preprocessed frames: 50_000 * 2 * 4x32x32 * 4 = 1.64GB.
+    * Dataloader storing on cpu then moving to gpu with multiprocessing.
+* Implemented storing preprocessed states instead of full frames: 20.50s.
+* Set off training run for 500 episodes.
+
 ### 10/12/2024
 * Training now takes more than 2x longer.
 * ![10/12/2024 State History run reward plot](dev_log_images/10_12_2024_state_history.png)
