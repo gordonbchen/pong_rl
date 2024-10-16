@@ -72,16 +72,16 @@ class ConvDQN(nn.Module):
             nn.Conv2d(32, 64, kernel_size=3, stride=1, padding="same", bias=False),
             nn.BatchNorm2d(64),
             nn.ReLU(),
-            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding="same", bias=False),
-            nn.BatchNorm2d(64),
+            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding="same", bias=False),
+            nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
         )
         self.linear = nn.Sequential(
             nn.Flatten(),
-            nn.LazyLinear(128),
+            nn.LazyLinear(512),
             nn.ReLU(),
-            nn.Linear(128, n_actions),
+            nn.Linear(512, n_actions),
         )
 
     def preprocess(self, xb: torch.Tensor) -> torch.Tensor:
@@ -113,16 +113,16 @@ if __name__ == "__main__":
 
     hyper_params = HyperParams(
         train_episodes=500,
-        batch_size=128,
+        batch_size=32,
         n_state_history=4,
-        lr=1e-4,
+        lr=3e-4,
         target_net_lr=5e-3,
         gamma=0.99,
-        max_epsilon=0.9,
-        min_epsilon=0.05,
-        epsilon_decay=1e-5,
-        replay_memory_maxlen=50_000,
-        output_subdir="pong_dqn/speed",  # TODO: Make this a CLI arg.
+        max_epsilon=1.0,
+        min_epsilon=0.01,
+        epsilon_decay=1.5e-5,
+        replay_memory_maxlen=int(1e4),
+        output_subdir="pong_dqn/reproduce",  # TODO: Make this a CLI arg.
         device="cuda",
     )
 

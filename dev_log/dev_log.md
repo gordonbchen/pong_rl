@@ -1,3 +1,10 @@
+### 10/15/2024
+* Really want to reproduce results from https://github.com/KaleabTessera/DQN-Atari though. Very good results: increased final linear size, decreased batch size and increased lr, made min and max epsilon more extreme with more time using low epsilon, decreased replay memory size. Would want to experiment more with which hyperparams actually made the difference. But I think it is time to move on and implement policy gradients. If I have time in the end I would love to come back and see what params actually are making the difference.
+
+### 10/14/2024
+* Set off training run for 1_000 episodes, with increased lr, batch size, model size, and replay memory size. Decreased epsilon decay to match increase in episodes. Slower training but reached highest performance.
+* Set off training run fo 1k episodes, only with increased lr and model size. No epsilon changes. Reached highest performance (reward of 5.0 after 8.4 hrs). Beat the other computer. Good enough. Now going to focus on policy gradients.
+
 ### 10/13/2024
 * Used kernprof to profile training (5 episodes).
     * Before state_history: 65.27s
