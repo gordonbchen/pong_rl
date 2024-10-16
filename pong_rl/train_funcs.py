@@ -47,8 +47,11 @@ class HyperParams:
     output_subdir: str = ""
     device: str = "cuda"
 
+    use_cli_args: bool = False
+
     def __post_init__(self) -> None:
-        self.cli_override()
+        if self.use_cli_args:
+            self.cli_override()
 
         self.output_dir = Path("outputs") / self.output_subdir
         self.output_dir.mkdir(parents=True, exist_ok=True)

@@ -124,6 +124,7 @@ if __name__ == "__main__":
         replay_memory_maxlen=int(1e4),
         output_subdir="pong_dqn/cli",
         device="cuda",
+        use_cli_args=True,
     )
 
     policy_net = ConvDQN(hyper_params.n_state_history, n_actions, top_border_end, bottom_border_end)
