@@ -48,6 +48,8 @@ class HyperParams:
     device: str = "cuda"
 
     def __post_init__(self) -> None:
+        self.cli_override()
+
         self.output_dir = Path("outputs") / self.output_subdir
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -73,9 +75,9 @@ class HyperParams:
         parser.add_argument("--min_epsilon", type=float, required=False)
         parser.add_argument("--epsilon_decay", type=float, required=False)
 
-        parser.add_argument("--replay_memory_maxlen", type=float, required=False)
-        parser.add_argument("--output_subdir", type=float, required=False)
-        parser.add_argument("--device", type=float, required=False)
+        parser.add_argument("--replay_memory_maxlen", type=int, required=False)
+        parser.add_argument("--output_subdir", type=str, required=False)
+        parser.add_argument("--device", type=str, required=False)
 
         args = parser.parse_args()
 

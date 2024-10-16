@@ -60,7 +60,6 @@ if __name__ == "__main__":
         output_subdir="cartpole_dqn/speed",
         device="cuda",
     )
-    hyper_params.cli_override()
 
     optimizer = torch.optim.AdamW(policy_net.parameters(), lr=hyper_params.lr, amsgrad=True)
     loss_func = nn.HuberLoss()

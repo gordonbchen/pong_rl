@@ -125,7 +125,6 @@ if __name__ == "__main__":
         output_subdir="pong_dqn/cli",
         device="cuda",
     )
-    hyper_params.cli_override()
 
     policy_net = ConvDQN(hyper_params.n_state_history, n_actions, top_border_end, bottom_border_end)
     target_net = ConvDQN(hyper_params.n_state_history, n_actions, top_border_end, bottom_border_end)
