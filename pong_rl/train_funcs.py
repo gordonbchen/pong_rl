@@ -5,6 +5,7 @@ from collections import deque, namedtuple
 from dataclasses import dataclass, asdict
 from itertools import count
 from pathlib import Path
+from argparse import ArgumentParser
 
 import gymnasium as gym
 from line_profiler import profile
@@ -53,6 +54,34 @@ class HyperParams:
         # Save as json.
         with open(self.output_dir / "hyper_params.json", mode="w") as f:
             json.dump(asdict(self), f, indent=4)
+
+    def cli_override(self) -> None:
+        """Override hyperparams from CLI args."""
+        parser = ArgumentParser()
+
+        parser.add_argument("--train_episodes", type=int, required=False)
+        parser.add_argument("--batch_size", type=int, required=False)
+
+        parser.add_argument("--n_state_history", type=int, required=False)
+
+        parser.add_argument("--lr", type=float, required=False)
+        parser.add_argument("--target_net_lr", type=float, required=False)
+
+        parser.add_argument("--gamma", type=float, required=False)
+
+        parser.add_argument("--max_epsilon", type=float, required=False)
+        parser.add_argument("--min_epsilon", type=float, required=False)
+        parser.add_argument("--epsilon_decay", type=float, required=False)
+
+        parser.add_argument("--replay_memory_maxlen", type=float, required=False)
+        parser.add_argument("--output_subdir", type=float, required=False)
+        parser.add_argument("--device", type=float, required=False)
+
+        args = parser.parse_args()
+
+        for k, v in vars(args).items():
+            if v is not None:
+                setattr(self, k, v)
 
 
 def get_epsilon(hyper_params: HyperParams, steps: int) -> float:
