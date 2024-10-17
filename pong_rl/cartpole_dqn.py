@@ -59,6 +59,7 @@ if __name__ == "__main__":
         replay_memory_maxlen=10_000,
         output_subdir="cartpole_dqn/speed",
         device="cuda",
+        use_cli_args=True,
     )
 
     optimizer = torch.optim.AdamW(policy_net.parameters(), lr=hyper_params.lr, amsgrad=True)

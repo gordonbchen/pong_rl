@@ -121,9 +121,10 @@ if __name__ == "__main__":
         max_epsilon=1.0,
         min_epsilon=0.01,
         epsilon_decay=1.5e-5,
-        replay_memory_maxlen=int(1e4),
-        output_subdir="pong_dqn/reproduce",  # TODO: Make this a CLI arg.
+        replay_memory_maxlen=int(5e4),
+        output_subdir="pong_dqn/cli",
         device="cuda",
+        use_cli_args=True,
     )
 
     policy_net = ConvDQN(hyper_params.n_state_history, n_actions, top_border_end, bottom_border_end)
