@@ -1,3 +1,10 @@
+### 10/25/2024
+* Finished code for training policy gradient model on cartpole. Next step is to refactor, add hyperparams that can be overridden via cli, and then train on pong (will have to support state history stacking).
+* Policy gradients are very nice to implement (I think). Simpler than double dqn when you have to train and use 2 models and keep them up to date with each other.
+
+### 10/23/2024
+* Started working on policy gradients. A lot of math today and understanding the policy gradient theorem (see derivation and interpretation in notes). I like that I can follow the math going on now (yay multivariable calculus and linear algebra)! Began working on training code for policy gradients.
+
 ### 10/15/2024
 * Really want to reproduce results from https://github.com/KaleabTessera/DQN-Atari though. Very good results: increased final linear size, decreased batch size and increased lr, made min and max epsilon more extreme with more time using low epsilon, decreased replay memory size. Would want to experiment more with which hyperparams actually made the difference. But I think it is time to move on and implement policy gradients. If I have time in the end I would love to come back and see what params actually are making the difference.
 * Added cli overriding for HyperParams. Started a bunch of sequential runs (overnight) using tiny bash script :). 
