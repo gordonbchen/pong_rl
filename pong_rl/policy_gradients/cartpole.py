@@ -9,6 +9,10 @@ Since pytorch like gradient descent, turn objective function into loss function.
 4. Update policy network params.
 """
 
+from argparse import ArgumentParser
+from pathlib import Path
+import json
+
 import numpy as np
 
 import torch
@@ -18,6 +22,29 @@ from torch.optim.optimizer import Optimizer
 from torch.utils.tensorboard import SummaryWriter
 
 import gymnasium as gym
+
+
+# CLI args.
+parser = ArgumentParser()
+parser.add_argument("--train_episodes", type=int, default=1_000)
+parser.add_argument("--lr", type=float, default=3e-4)
+parser.add_argument("--n_hidden_layers", type=int, default=3)
+parser.add_argument("--n_neurons", type=int, default=256)
+parser.add_argument("--gamma", type=float, default=0.99)
+parser.add_argument("--output_dir", type=str, default="outputs/policy_gradients/cartpole")
+
+args = parser.parse_args()
+
+TRAIN_EPISODES: int = args.train_episodes
+LR: float = args.lr
+N_HIDDEN_LAYERS: int = args.n_hidden_layers
+N_NEURONS: int = args.n_neurons
+GAMMA: float = args.gamma
+OUTPUT_DIR: Path = Path(args.output_dir)
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+with open(OUTPUT_DIR / "hyper_params.json", mode="w") as f:
+    json.dump(vars(args), f)
 
 
 class PolicyNet(nn.Module):
@@ -56,7 +83,7 @@ class PolicyNet(nn.Module):
 
 def train(episodes: int, policy_net: PolicyNet, env: gym.Env, optim: Optimizer):
     """Train the policy network."""
-    summary_writer = SummaryWriter(log_dir="outputs/policy_gradients/cartpole", max_queue=5)
+    summary_writer = SummaryWriter(log_dir=OUTPUT_DIR, max_queue=5)
 
     policy_net.train().to("cuda")
 
@@ -80,7 +107,7 @@ def train(episodes: int, policy_net: PolicyNet, env: gym.Env, optim: Optimizer):
         returns = torch.empty(len(rewards), dtype=torch.float32, device="cuda")
         for i in range(len(rewards)):
             future_return = 0.0 if (i == 0) else returns[i - 1]
-            returns[i] = rewards[-1 - i] + (0.99 * future_return)
+            returns[i] = rewards[-1 - i] + (GAMMA * future_return)
 
         returns = (returns - returns.mean()) / (returns.std() + torch.finfo(torch.float32).eps)
 
@@ -107,8 +134,11 @@ if __name__ == "__main__":
     obs, info = env.reset()
 
     policy_net = PolicyNet(
-        n_obs=len(obs), n_actions=env.action_space.n, n_hidden_layers=3, n_neurons=256
+        n_obs=len(obs),
+        n_actions=env.action_space.n,
+        n_hidden_layers=N_HIDDEN_LAYERS,
+        n_neurons=N_NEURONS,
     )
-    optim = Adam(policy_net.parameters(), lr=3e-4)
+    optim = Adam(policy_net.parameters(), lr=LR)
 
-    train(1_000, policy_net, env, optim)
+    train(TRAIN_EPISODES, policy_net, env, optim)
