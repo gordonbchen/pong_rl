@@ -1,3 +1,8 @@
+### 10/27/2024
+* HyperParam class that can be overridden through cli
+* Refactored general policy gradient code out of cartpole training script (in preparation of training pong policy gradients)
+* Next step is writing a script to train a pong policy gradient model 
+
 ### 10/25/2024
 * Finished code for training policy gradient model on cartpole. Next step is to refactor, add hyperparams that can be overridden via cli, and then train on pong (will have to support state history stacking).
 * Policy gradients are very nice to implement (I think). Simpler than double dqn when you have to train and use 2 models and keep them up to date with each other.
