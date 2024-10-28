@@ -69,21 +69,22 @@ class PolicyNet(nn.Module):
         logits = self.net(xb)
         return torch.softmax(logits, dim=1)
 
-    def act(self, obs: np.ndarray) -> tuple[int, torch.Tensor]:
-        """
-        Forward the model to get a probability distribution over actions.
-        Sample random action from distribution.
-        Return action and log of probability.
-        """
-        obs = torch.tensor(obs).to("cuda", dtype=torch.float32).unsqueeze(0)
-        probs = policy_net(obs).squeeze(0)
 
-        action = torch.multinomial(probs, num_samples=1).item()
-        log_prob = torch.log(probs[action])
-        return action, log_prob
+def act(policy_net: nn.Module, obs: np.ndarray) -> tuple[int, torch.Tensor]:
+    """
+    Forward the model to get a probability distribution over actions.
+    Sample random action from distribution.
+    Return action and log of probability.
+    """
+    obs = torch.tensor(obs).to("cuda", dtype=torch.float32).unsqueeze(0)
+    probs = policy_net(obs).squeeze(0)
+
+    action = torch.multinomial(probs, num_samples=1).item()
+    log_prob = torch.log(probs[action])
+    return action, log_prob
 
 
-def train(episodes: int, policy_net: PolicyNet, env: gym.Env, optim: Optimizer):
+def train(episodes: int, policy_net: nn.Module, env: gym.Env, optim: Optimizer):
     """Train the policy network."""
     summary_writer = SummaryWriter(log_dir=OUTPUT_DIR, max_queue=5)
 
@@ -95,7 +96,7 @@ def train(episodes: int, policy_net: PolicyNet, env: gym.Env, optim: Optimizer):
         log_probs, rewards = [], []
 
         while True:
-            action, log_prob = policy_net.act(obs)
+            action, log_prob = act(policy_net, obs)
             log_probs.append(log_prob)
 
             obs, reward, terminated, truncated, _ = env.step(action)
@@ -132,13 +133,13 @@ def train(episodes: int, policy_net: PolicyNet, env: gym.Env, optim: Optimizer):
 
 
 @torch.no_grad()
-def get_frames(policy_net: PolicyNet, env: gym.Env) -> list[np.ndarray]:
+def get_frames(policy_net: nn.Module, env: gym.Env) -> list[np.ndarray]:
     """Play a single episode and return frames."""
     frames = []
 
     obs, _ = env.reset()
     while True:
-        action, _ = policy_net.act(obs)
+        action, _ = act(policy_net, obs)
         obs, _, terminated, truncated, _ = env.step(action)
 
         frames.append(env.render())
@@ -148,7 +149,7 @@ def get_frames(policy_net: PolicyNet, env: gym.Env) -> list[np.ndarray]:
     return frames
 
 
-def show_episode(policy_net: PolicyNet, env: gym.Env) -> None:
+def show_episode(policy_net: nn.Module, env: gym.Env) -> None:
     """Show an episode of gameplay."""
     policy_net.eval()
 
