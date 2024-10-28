@@ -131,6 +131,7 @@ def train(episodes: int, policy_net: PolicyNet, env: gym.Env, optim: Optimizer):
     summary_writer.close()
 
 
+@torch.no_grad()
 def get_frames(policy_net: PolicyNet, env: gym.Env) -> list[np.ndarray]:
     """Play a single episode and return frames."""
     frames = []
