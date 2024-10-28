@@ -5,7 +5,7 @@ from torchvision.transforms.v2.functional import resize
 import numpy as np
 import gymnasium as gym
 
-from train_funcs import HyperParams, show_episode, train
+from dqn import HyperParams, show_episode, train
 
 
 def find_border_ends(state: np.ndarray) -> tuple[int, int]:
@@ -122,7 +122,7 @@ if __name__ == "__main__":
         min_epsilon=0.01,
         epsilon_decay=1.5e-5,
         replay_memory_maxlen=int(5e4),
-        output_subdir="pong_dqn/cli",
+        output_subdir="dqn/pong/test",
         device="cuda",
         use_cli_args=True,
     )

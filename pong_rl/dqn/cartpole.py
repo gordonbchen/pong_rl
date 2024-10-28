@@ -3,7 +3,7 @@ import torch.nn as nn
 
 import gymnasium as gym
 
-from train_funcs import HyperParams, show_episode, train
+from dqn import HyperParams, show_episode, train
 
 
 class MLPDQN(nn.Module):
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         min_epsilon=0.05,
         epsilon_decay=1e-3,
         replay_memory_maxlen=10_000,
-        output_subdir="cartpole_dqn/speed",
+        output_subdir="dqn/cartpole/test",
         device="cuda",
         use_cli_args=True,
     )
