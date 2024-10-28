@@ -14,6 +14,8 @@ from pathlib import Path
 import json
 
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as anim
 
 import torch
 import torch.nn as nn
@@ -129,6 +131,40 @@ def train(episodes: int, policy_net: PolicyNet, env: gym.Env, optim: Optimizer):
     summary_writer.close()
 
 
+def get_frames(policy_net: PolicyNet, env: gym.Env) -> list[np.ndarray]:
+    """Play a single episode and return frames."""
+    frames = []
+
+    obs, _ = env.reset()
+    while True:
+        action, _ = policy_net.act(obs)
+        obs, _, terminated, truncated, _ = env.step(action)
+
+        frames.append(env.render())
+        if terminated or truncated:
+            break
+
+    return frames
+
+
+def show_episode(policy_net: PolicyNet, env: gym.Env) -> None:
+    """Show an episode of gameplay."""
+    policy_net.eval()
+
+    frames = get_frames(policy_net, env)
+
+    fig, ax = plt.subplots()
+    img = ax.imshow(frames[0])
+
+    def update(frame: int):
+        """Update the image."""
+        img.set_data(frames[frame])
+        return img
+
+    animation = anim.FuncAnimation(fig=fig, func=update, frames=len(frames))
+    animation.save(OUTPUT_DIR / "episode.mp4")
+
+
 if __name__ == "__main__":
     env = gym.make("CartPole-v1", render_mode="rgb_array")
     obs, info = env.reset()
@@ -142,3 +178,4 @@ if __name__ == "__main__":
     optim = Adam(policy_net.parameters(), lr=LR)
 
     train(TRAIN_EPISODES, policy_net, env, optim)
+    show_episode(policy_net, env)
