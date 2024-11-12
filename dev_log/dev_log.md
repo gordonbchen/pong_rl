@@ -1,3 +1,11 @@
+### 11/11/2024
+* Read and implemented the A2C algorithm.
+* Added notes and equations, as well as a training script for A2C on cartpole.
+* I think there are still some more complex topics in A2C to explore.
+* Didn't really want to port the policy gradient training script to pong.
+* Will probably save final rl port to pong for PPO.
+* Next step is to continue exploring advanced A2C concepts, or start learning about PPO. 
+
 ### 10/27/2024
 * HyperParam class that can be overridden through cli
 * Refactored general policy gradient code out of cartpole training script (in preparation of training pong policy gradients)
