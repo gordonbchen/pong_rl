@@ -143,12 +143,40 @@
   * Estimating wiht multiple trajectories (episodes): $\nabla_\theta J(\theta)\approx \hat{g} = \frac{1}{m} \sum_{1}^{m} \sum(R(\tau) * \nabla_\theta log\pi(a_{t}|s_{t}))$
     * Averaging gradients across multiple episodes
 
-
-  
-
-
-
-
-
-
-
+## Unit 5: Advantage Actor-Critic (A2C)
+* Policy-gradients
+  * $\nabla_\theta J(\theta) = \sum \nabla_\theta log\pi_\theta(a_t, s_t) R(\tau)$
+  * Update theta in direction that increases log prob of taking action given state if positive return
+  * Return calculated from Monte-Carlo sampling, calculate cumulative discounted reward
+  * Unbiased, we use the true return, not an estimation
+  * High variance b/c many different trajectories can branch off at the same action, many different reward signals for the same action
+  * Can mitigate variance by using many trajectories at the same time
+* Actor-Critic (A2C):
+  * Actor: policy function controls agent actions, $\pi_\theta(s)$
+  * Critic: value function measures how good the action is $\hat{q}_w(s, a)$
+  * Training loop
+    * At timestep $t$, get current state $S_t$
+    * Get action from policy: $A_t = \pi_\theta(S_t)$
+    * Get critic value of action: $Q_{(A_t, S_t)} = \hat{q}_w(S_t, A_t)$
+    * Perform action $A_t$, get new state $S_{t+1}$ and reward $R_{t+1}$
+    * Update policy using q-value as return: $\Delta \theta = \alpha \nabla_\theta(log\pi_\theta(s, a)) * \hat{q}_w(s, a)$
+      * Update theta in direction of increasing log prob if q-value of action, state is positive
+    * Get next action from policy: $A_{t+1} = \pi_\theta(S_{t+1})$
+    * Update critic parameters using TD: $\Delta w = \beta (R(s, a) + \gamma \hat{q_w}(s_{t+1}, a_{t+1}) - \hat{q_w}(s_t, a_t)) \nabla_w \hat{q_w}(s_t, a_t)$ 
+      * td error: $R(s, a) + \gamma \hat{q_w}(s_{t+1}, a_{t+1}) - \hat{q_w}(s_t, a_t)$
+        * difference b/t reward and discounted q-value of the next state and action, and estimated q-value at the current state
+      * Update params $w$ in direction of gradient of value function if td error is positive else opposite
+    * Policy and value functions have learning rates $\alpha$ and $\beta$
+* Advantage
+  * Advantage function: $A(s, a) = Q(s, a) - V(s)$
+  * How much better is taking an action at a state better than the average value of the state
+  * $A(s, a) = r + \gamma V(s') - V(s)$
+  * Advantage = td error of value function = reward + discounted value of next state - value of this state
+  * Instead of having state-action value function Q, have state value function V
+  * Training loop
+    * At timestep $t$, get current state $s$
+    * Get action from policy: $a = \pi_\theta(s)$
+    * Perform action $a$, get new state $s'$ and reward $r$
+    * Get advantage from critic: $A(s, a) = r + \gamma V(s') - V(s)$
+    * Update policy: $\Delta \theta = \alpha \nabla_\theta(log\pi_\theta(s, a)) * A(s, a)$
+    * Update critic parameters using TD: $\Delta w = \beta (r + \gamma V(s') - V(s)) \nabla_w V(s)$  
