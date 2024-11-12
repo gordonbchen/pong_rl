@@ -9,7 +9,7 @@ from torch.optim import Adam
 from torch.optim.optimizer import Optimizer
 
 
-LR = 1e-4
+LR = 3e-5
 GAMMA = 0.99
 TRAIN_EPISODES = 1_000
 N_HIDDEN_LAYERS = 4
@@ -122,5 +122,4 @@ if __name__ == "__main__":
     actor_optim = Adam(actor.parameters(), lr=LR)
     critic_optim = Adam(critic.parameters(), lr=LR)
 
-    # BUG: training diverges.
     train(actor, critic, actor_optim, critic_optim, env, train_episodes=TRAIN_EPISODES)
