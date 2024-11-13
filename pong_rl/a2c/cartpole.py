@@ -75,7 +75,6 @@ def train(
             next_state = torch.tensor(next_obs, dtype=torch.float32, device="cuda").unsqueeze(0)
 
             # Calculate advantage.
-            # NOTE: 0 when truncated as well?
             with torch.no_grad():
                 td_target = reward + (GAMMA * critic(next_state) * (1 - terminated))
             advantage = td_target - critic(state)
@@ -103,7 +102,6 @@ if __name__ == "__main__":
     env = gym.make("CartPole-v1")
     n_obs = env.observation_space.shape[0]
     n_actions = env.action_space.n
-    print(f"n_obs={n_obs}, n_actions={n_actions}")
 
     actor = nn.Sequential(
         MLP(
@@ -114,10 +112,7 @@ if __name__ == "__main__":
         ),
         nn.Softmax(dim=-1),
     )
-    print(actor)
-
     critic = MLP(n_inputs=n_obs, n_outputs=1, n_hidden_layers=N_HIDDEN_LAYERS, n_neurons=N_NEURONS)
-    print(critic)
 
     actor_optim = Adam(actor.parameters(), lr=LR)
     critic_optim = Adam(critic.parameters(), lr=LR)
