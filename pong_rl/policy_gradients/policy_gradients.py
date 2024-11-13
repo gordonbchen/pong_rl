@@ -103,7 +103,7 @@ def train(policy_net: nn.Module, env: gym.Env, optim: Optimizer, hyper_params: H
         # Logging.
         total_rewards = sum(rewards)
         summary_writer.add_scalar("rewards", total_rewards, episode)
-        summary_writer.add_scalar("loss", loss, episode)
+        summary_writer.add_scalar("loss", loss.item(), episode)
 
         print(f"episode {episode}: rewards = {total_rewards}")
 

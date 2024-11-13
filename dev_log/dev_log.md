@@ -1,3 +1,22 @@
+### 11/13/2024
+* Ran A2C training again and training diverged again
+* Added tensorboard logging to A2C
+* Experimented with different LR values, and even tried grad clipping, didn't work
+* I've never used gradient clipping successfully lol. So I'll definitely want to explore that later on.
+* Updated critic loss from advantage^2 to 0.5 * (advantage^2). Completely escaped my mind how the derivative would be 2 * advantage without the half scaling.
+* Merged the actor and critic models into a single model with a shared backbone and 2 outputs. This makes a lot of sense, feature extraction should generally be pretty similar between the two, and only the model head should be trained individually.
+* A2C behaves much more nicely now. Still sees some training instability though.
+* Likely will move on to PPO after merging this branch.
+* There is still more to explore with A2C though, especially a variant called soft actor-critic. Also learned that there is A3C lol, asynchronous A2C that is distributed. Will want to explore distributed RL training and multi-agent as well later on.
+
+### 11/11/2024
+* Read and implemented the A2C algorithm.
+* Added notes and equations, as well as a training script for A2C on cartpole.
+* I think there are still some more complex topics in A2C to explore.
+* Didn't really want to port the policy gradient training script to pong.
+* Will probably save final rl port to pong for PPO.
+* Next step is to continue exploring advanced A2C concepts, or start learning about PPO. 
+
 ### 10/27/2024
 * HyperParam class that can be overridden through cli
 * Refactored general policy gradient code out of cartpole training script (in preparation of training pong policy gradients)
@@ -36,7 +55,6 @@
 
 ### 10/12/2024
 * Training now takes more than 2x longer.
-* ![10/12/2024 State History run reward plot](dev_log_images/10_12_2024_state_history.png)
 * Possible reasons for 2x slowdown:
     * Conv input size for getting action is now 4x32x32 (4 frames of state history) instead of 1x32x32. (No solution here.)
     * Deque in training loop, with np.stack happening 2x per step (to get state and next_state from obs hsitory).
