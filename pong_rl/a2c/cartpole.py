@@ -1,5 +1,7 @@
 """Train an Advantage Actor Critic (A2C) model on cartpole."""
 
+from pathlib import Path
+
 import gymnasium as gym
 
 import torch
@@ -8,12 +10,16 @@ import torch.nn as nn
 from torch.optim import Adam
 from torch.optim.optimizer import Optimizer
 
+from torch.utils.tensorboard import SummaryWriter
 
-LR = 3e-5
+
+LR = 1e-4
 GAMMA = 0.99
-TRAIN_EPISODES = 1_000
+TRAIN_EPISODES = 2_000
 N_HIDDEN_LAYERS = 4
 N_NEURONS = 256
+OUTPUT_DIR = Path("outputs/a2c/cartpole")
+OUTPUT_DIR.mkdir(exist_ok=True, parents=True)
 
 
 class MLP(nn.Module):
@@ -59,6 +65,8 @@ def train(
     actor.train().to("cuda")
     critic.train().to("cuda")
 
+    summary_writer = SummaryWriter(OUTPUT_DIR)
+
     for episode in range(train_episodes):
         episode_reward = 0
 
@@ -86,7 +94,8 @@ def train(
             critic_optim.step()
 
             # Optimize actor.
-            actor_loss = -1.0 * action_probs[action].log() * advantage.detach()
+            log_prob = action_probs[action].log()
+            actor_loss = -1.0 * log_prob * advantage.detach()
             actor_optim.zero_grad()
             actor_loss.backward()
             actor_optim.step()
@@ -95,7 +104,16 @@ def train(
             if terminated or truncated:
                 break
 
+        # Logging.
         print(f"Episode {episode}: reward={episode_reward}")
+        summary_writer.add_scalar("reward", episode_reward, episode)
+        summary_writer.add_scalar("critic_loss", critic_loss.item(), episode)
+        summary_writer.add_scalar("actor_loss", actor_loss.item(), episode)
+        summary_writer.add_scalar("advantage", advantage.item(), episode)
+        summary_writer.add_scalar("log_prob", log_prob.item(), episode)
+        summary_writer.add_scalar("prob", action_probs[action].item(), episode)
+
+    summary_writer.close()
 
 
 if __name__ == "__main__":
