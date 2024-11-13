@@ -57,7 +57,7 @@ def train(actor_critic: ActorCritic, optim: Optimizer, env: gym.Env, train_episo
         * td_target = r + (gamma * V(s'))
         * advantage = td_target - V(s)
     * Optimize policy: loss = -log(probs) * advantage
-    * Update value model: loss = advantage ** 2
+    * Update value model: loss = 0.5 * (advantage ** 2)
     """
     actor_critic.train().to("cuda")
     summary_writer = SummaryWriter(OUTPUT_DIR)
