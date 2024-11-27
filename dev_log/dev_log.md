@@ -1,3 +1,9 @@
+## 11/26/2024
+* Read a lot on PPO and GAE. Started PPO implementation
+* TODO: Check everything!
+* Split optimization into mini-batches?
+* Roll out # steps instead of a single episode? 
+
 ### 11/13/2024
 * Ran A2C training again and training diverged again
 * Added tensorboard logging to A2C
