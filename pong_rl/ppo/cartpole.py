@@ -16,11 +16,12 @@ N_HIDDEN_LAYERS = 4
 N_NEURONS = 256
 LR = 3e-4
 
-TRAIN_EPISODES = 750
+TRAIN_EPISODES = 500
 EPOCHS_PER_EPISODE = 32
 
 PROB_RATIO_CLIP_FACTOR = 0.2
-ENTROPY_LOSS_COEFF = 0.01
+ENTROPY_LOSS_COEFF = 0.1
+CRITIC_LOSS_COEFF = 1.0
 
 TIME_DISCOUNT_FACTOR_GAMMA = 0.99
 GAE_DISCOUNT_FACTOR_LAMBDA = 0.95
@@ -135,7 +136,7 @@ def optimize(
     clipped_actor_loss = clipped_prob_ratios * advantages.detach()
     actor_loss = -1.0 * torch.min(unclipped_actor_loss, clipped_actor_loss).mean()
 
-    critic_loss = 0.5 * (advantages**2.0).mean()
+    critic_loss = CRITIC_LOSS_COEFF * 0.5 * (advantages**2.0).mean()
     entropy_loss = -1.0 * ENTROPY_LOSS_COEFF * mean_entropy
     loss = actor_loss + critic_loss + entropy_loss
 
