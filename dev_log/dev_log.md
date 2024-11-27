@@ -1,3 +1,14 @@
+# 11/27/2024
+* Added tensorboard logging to PPO
+* Did a tiny bit of undisciplined hyperparameter tuning (entropy and critic loss coefficients). There is A LOT to potentially tune though. Wondering if moving on to more advanced concepts or continuing to actually experiment (not just plug in things, but systematically tune with multiple random seeds and hyperparameter search) would be more beneficial.
+* Probably going to move on and continue learning about different algorithms. But probably will come back to PPO because as far as I know, it is the state of the art in RL currently.
+
+## 11/26/2024
+* Read a lot on PPO and GAE. Started PPO implementation
+* TODO: Check everything!
+* Split optimization into mini-batches?
+* Roll out # steps instead of a single episode? 
+
 ### 11/13/2024
 * Ran A2C training again and training diverged again
 * Added tensorboard logging to A2C

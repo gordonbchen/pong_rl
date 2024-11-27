@@ -180,3 +180,45 @@
     * Get advantage from critic: $A(s, a) = r + \gamma V(s') - V(s)$
     * Update policy: $\Delta \theta = \alpha \nabla_\theta(log\pi_\theta(s, a)) * A(s, a)$
     * Update critic parameters using TD: $\Delta w = \beta (r + \gamma V(s') - V(s)) \nabla_w V(s)$  
+
+## Unit 8: PPO
+* Intuition behind PPO: avoid large catastrophic updates by clipping
+* A2C loss: $L = L_{actor} + L_{critic}$
+  * $L_{actor} = - log(p(a|s)) * A$, increase probabilities when positive advantage
+  * $L_{critic} = \frac{1}{2} A^2$, push value of state closer to more informed value of next state
+* PPO loss: $L = L_{actor} + L_{critic} + L_{entropy}$
+  * $L_{actor} = - min(r(\theta) * A, clip(r(\theta), 1 \pm \epsilon) * A)$
+    * $r(\theta) = \frac{p(a|s)}{p_{old}(a|s)}$
+    * $\epsilon \approx 0.2$ is a good starting point
+    * Increase probabilities when positive advantage
+    * No gradient when the advantage is positive and the ratio is too high
+  * $L_{critic} = \frac{1}{2} A^2$, push value of state closer to more informed value of next state
+  * $L_{entropy} = \alpha * -\sum -p(x)log(p(x))$, reward model for exploration
+    * $\alpha \approx 0.01$ is a good staring point
+* GAE (Generalized Advantage Estimation)
+  * TD: $A = \delta = (r + \gamma * V(s')) - V(s)$
+    * Unbiased: local estimate of advantage
+    * High variance: very short term
+  * Monte Carlo Return: $A = \sum \gamma ^ t r_t$
+    * More biased: depends on actual stochastic rewards accumulated during episode (possibly non-representative)
+    * Lower variance: takes into account the entire episode, small fluctuations average out
+  * GAE: $ A_t = \sum (\lambda \gamma)^i * \delta_{t + i}$
+    * Combines benefits of TD and Monte Carlo Returns
+      * $\lambda = 0$: TD
+      * $\lambda = 1$: Monte Carlo
+      * Lower $\lambda$ = lower bias, more variance
+      * Higher $\lambda$ = higher bias, less variance
+    * Parameterized bias-variance tradeoff
+    * Weighted sum over TD errors
+    * $\lambda \in [0.9, 0.95]$ is a good starting point
+* Training loop
+  * for episode in n_episodes:
+    * Rollout episode: collect state, action, action prob, reward
+    * for epoch in n_epochs:
+      * Calculate ppo loss
+        * Probability ratio
+          * Recalculate probabilities for each action
+          * Compare with previous action probs
+        * Entropy: calculate average entropy for over all new action probability distributions
+        * Advantage: calculate advantages for each state using GAE
+      * Backprop and optimize
