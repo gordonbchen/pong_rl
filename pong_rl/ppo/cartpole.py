@@ -1,9 +1,12 @@
 """Train an RL model on cartpole using PPO."""
 
+from pathlib import Path
+
 import torch
 from torch import nn
 from torch.optim.optimizer import Optimizer
 from torch.optim import Adam
+from torch.utils.tensorboard import SummaryWriter
 
 import gymnasium as gym
 
@@ -21,6 +24,9 @@ ENTROPY_LOSS_COEFF = 0.01
 
 TIME_DISCOUNT_FACTOR_GAMMA = 0.99
 GAE_DISCOUNT_FACTOR_LAMBDA = 0.95
+
+OUTPUT_DIR = Path("outputs/ppo/cartpole/test")
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
 class ActorCritic(nn.Module):
@@ -99,6 +105,8 @@ def optimize(
     actions: torch.Tensor,
     prev_action_probs: torch.Tensor,
     rewards: torch.Tensor,
+    tensorboard_log: SummaryWriter,
+    n_training_steps: int,
 ) -> torch.Tensor:
     """
     Perform an optimization step on the actor critic over a rolled out episode.
@@ -136,6 +144,20 @@ def optimize(
     loss.backward()
     optim.step()
 
+    # Log.
+    tensorboard_log.add_scalars(
+        "loss",
+        {
+            "actor": actor_loss.item(),
+            "critic": critic_loss.item(),
+            "entropy": entropy_loss.item(),
+            "total": loss.item(),
+        },
+        n_training_steps,
+    )
+    tensorboard_log.add_scalar("prob_ratio", prob_ratios.mean().item(), n_training_steps)
+    tensorboard_log.add_scalar("entropy", mean_entropy.item(), n_training_steps)
+
     return action_probs.detach()
 
 
@@ -147,9 +169,27 @@ if __name__ == "__main__":
     actor_critic = ActorCritic(n_obs, n_actions, N_HIDDEN_LAYERS, N_NEURONS).to("cuda")
     optim = Adam(actor_critic.parameters(), lr=LR)
 
+    tensorboard_log = SummaryWriter(OUTPUT_DIR)
+
+    n_training_steps = 0
     for episode in range(TRAIN_EPISODES):
         states, actions, action_probs, rewards = rollout_episode(actor_critic, env)
-        print(f"Episode={episode}, reward={rewards.sum().item()}")
+
+        episode_reward = rewards.sum().item()
+        print(f"Episode={episode}, steps={n_training_steps}, reward={episode_reward}")
+        tensorboard_log.add_scalar("reward", episode_reward, n_training_steps)
 
         for epoch in range(EPOCHS_PER_EPISODE):
-            action_probs = optimize(actor_critic, optim, states, actions, action_probs, rewards)
+            n_training_steps += 1
+            action_probs = optimize(
+                actor_critic,
+                optim,
+                states,
+                actions,
+                action_probs,
+                rewards,
+                tensorboard_log,
+                n_training_steps,
+            )
+
+    tensorboard_log.close()
