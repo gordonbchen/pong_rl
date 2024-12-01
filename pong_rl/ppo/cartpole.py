@@ -10,6 +10,9 @@ from torch.utils.tensorboard import SummaryWriter
 
 import gymnasium as gym
 
+import matplotlib.pyplot as plt
+import matplotlib.animation as anim
+
 
 # Hyperparams.
 N_HIDDEN_LAYERS = 4
@@ -19,7 +22,7 @@ LR = 3e-4
 TRAIN_EPISODES = 500
 EPOCHS_PER_EPISODE = 32
 
-PROB_RATIO_CLIP_FACTOR = 0.2
+PROB_RATIO_CLIP_FACTOR = 0.1
 ENTROPY_LOSS_COEFF = 0.1
 CRITIC_LOSS_COEFF = 1.0
 
@@ -162,23 +165,64 @@ def optimize(
     return action_probs.detach()
 
 
+@torch.no_grad()
+def show_episode(actor_critic: ActorCritic, env: gym.Env) -> None:
+    """Roll out an episode in eval mode and save an animation."""
+    # Roll out episode.
+    actor_critic.eval()
+
+    state, info = env.reset()
+    frames = [env.render()]
+
+    while True:
+        state = torch.tensor(state, dtype=torch.float32, device="cuda")
+        probs = actor_critic.get_action_probs(state.unsqueeze(0))[0]
+        action = torch.multinomial(probs, num_samples=1).item()
+        state, reward, terminated, truncated, info = env.step(action)
+        frames.append(env.render())
+
+        if terminated or truncated:
+            break
+
+    # Plot and save animation.
+    fig, ax = plt.subplots()
+    img = ax.imshow(frames[0])
+
+    def update(frame: int):
+        """Update the image."""
+        img.set_data(frames[frame])
+        return img
+
+    animation = anim.FuncAnimation(fig=fig, func=update, frames=len(frames))
+    animation.save(OUTPUT_DIR / "episode.mp4")
+
+    plt.close()
+
+
 if __name__ == "__main__":
-    env = gym.make("CartPole-v1")
+    env = gym.make("CartPole-v1", render_mode="rgb_array")
     n_obs = env.observation_space.shape[0]
     n_actions = env.action_space.n
 
-    actor_critic = ActorCritic(n_obs, n_actions, N_HIDDEN_LAYERS, N_NEURONS).to("cuda")
+    actor_critic = ActorCritic(n_obs, n_actions, N_HIDDEN_LAYERS, N_NEURONS).to("cuda").train()
     optim = Adam(actor_critic.parameters(), lr=LR)
 
     tensorboard_log = SummaryWriter(OUTPUT_DIR)
 
+    max_episode_reward = float("-inf")
     n_training_steps = 0
+
     for episode in range(TRAIN_EPISODES):
         states, actions, action_probs, rewards = rollout_episode(actor_critic, env)
 
         episode_reward = rewards.sum().item()
         print(f"Episode={episode}, steps={n_training_steps}, reward={episode_reward}")
         tensorboard_log.add_scalar("reward", episode_reward, n_training_steps)
+
+        if episode_reward > max_episode_reward:
+            max_episode_reward = episode_reward
+            show_episode(actor_critic, env)
+            actor_critic.train()
 
         for epoch in range(EPOCHS_PER_EPISODE):
             n_training_steps += 1
