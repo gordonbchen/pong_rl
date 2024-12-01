@@ -196,6 +196,8 @@ def show_episode(actor_critic: ActorCritic, env: gym.Env) -> None:
     animation = anim.FuncAnimation(fig=fig, func=update, frames=len(frames))
     animation.save(OUTPUT_DIR / "episode.mp4")
 
+    plt.close()
+
 
 if __name__ == "__main__":
     env = gym.make("CartPole-v1", render_mode="rgb_array")
