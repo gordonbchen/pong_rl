@@ -167,7 +167,7 @@ if __name__ == "__main__":
     n_obs = env.observation_space.shape[0]
     n_actions = env.action_space.n
 
-    actor_critic = ActorCritic(n_obs, n_actions, N_HIDDEN_LAYERS, N_NEURONS).to("cuda")
+    actor_critic = ActorCritic(n_obs, n_actions, N_HIDDEN_LAYERS, N_NEURONS).to("cuda").train()
     optim = Adam(actor_critic.parameters(), lr=LR)
 
     tensorboard_log = SummaryWriter(OUTPUT_DIR)
